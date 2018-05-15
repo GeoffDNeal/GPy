@@ -38,7 +38,7 @@ from __future__ import print_function
 import os
 import sys
 from setuptools import setup, Extension
-import numpy as np
+from setuptools.command.build_ext import build_ext as _build_ext
 import codecs
 
 def read(fname):
@@ -83,31 +83,42 @@ else:
 ext_mods = [Extension(name='GPy.kern.src.stationary_cython',
                       sources=['GPy/kern/src/stationary_cython.c',
                                'GPy/kern/src/stationary_utils.c'],
-                      include_dirs=[np.get_include(),'.'],
+                      #include_dirs=[np.get_include(),'.'],
                       extra_compile_args=compile_flags,
                       extra_link_args = link_args),
             Extension(name='GPy.util.choleskies_cython',
                       sources=['GPy/util/choleskies_cython.c'],
-                      include_dirs=[np.get_include(),'.'],
+                      #include_dirs=[np.get_include(),'.'],
                       extra_link_args = link_args,
                       extra_compile_args=compile_flags),
             Extension(name='GPy.util.linalg_cython',
                       sources=['GPy/util/linalg_cython.c'],
-                      include_dirs=[np.get_include(),'.'],
+                      #include_dirs=[np.get_include(),'.'],
                       extra_compile_args=compile_flags,
                       extra_link_args = link_args),
             Extension(name='GPy.kern.src.coregionalize_cython',
                       sources=['GPy/kern/src/coregionalize_cython.c'],
-                      include_dirs=[np.get_include(),'.'],
+                      #include_dirs=[np.get_include(),'.'],
                       extra_compile_args=compile_flags,
                       extra_link_args = link_args),
             Extension(name='GPy.models.state_space_cython',
                       sources=['GPy/models/state_space_cython.c'],
-                      include_dirs=[np.get_include(),'.'],
+                      #include_dirs=[np.get_include(),'.'],
                       extra_compile_args=compile_flags,
                       extra_link_args = link_args)]
 
+
+class build_ext(_build_ext):
+    def finalize_options(self):
+        _build_ext.finalize_options(self)
+        # Prevent numpy from thinking it is still in its setup process:
+        __builtins__.__NUMPY_SETUP__ = False
+        import numpy as np
+        self.include_dirs.append(np.get_include())
+
+
 setup(name = 'GPy',
+      cmdclass={'build_ext': build_ext},
       version = __version__,
       author = read_to_rst('AUTHORS.txt'),
       author_email = "gpy.authors@gmail.com",
